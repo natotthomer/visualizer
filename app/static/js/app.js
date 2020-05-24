@@ -79,7 +79,6 @@ window.onload = function() {
     audio.src = URL.createObjectURL(files[0]); // Creates a DOMString containing the specified File object
 
     const name = files[0].name
-    debugger
     h3.innerText = `${name}` // Sets <h3> to the name of the file
 
     ///////// <CANVAS> INITIALIZATION //////////
@@ -136,32 +135,38 @@ window.onload = function() {
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
     console.log('WIDTH: ', WIDTH, 'HEIGHT: ', HEIGHT)
+    console.log('bufferLength', bufferLength)
 
     const barWidth = (WIDTH / bufferLength) * 13;
     console.log('BARWIDTH: ', barWidth)
 
-    console.log('TOTAL WIDTH: ', (117*10)+(118*barWidth)) // (total space between bars)+(total width of all bars)
+    const NUM_OF_BARS = 118;
 
-    let barHeight;
+    const TOTAL_WIDTH = (NUM_OF_BARS*10)+(NUM_OF_BARS*barWidth)
+    console.log('TOTAL WIDTH: ', TOTAL_WIDTH / NUM_OF_BARS) // (total space between bars)+(total width of all bars)
+    
+
     let x = 0;
-
+    
     function renderFrame() {
       requestAnimationFrame(renderFrame); // Takes callback function to invoke before rendering
-
-      x = 0;
-
+      
+      x = 0; // reset x
+      
       analyser.getByteFrequencyData(dataArray); // Copies the frequency data into dataArray
       // Results in a normalized array of values between 0 and 255
       // Before this step, dataArray's values are all zeros (but with length of 8192)
-
+      
       ctx.fillStyle = "rgba(0,0,0,0.2)"; // Clears canvas before rendering bars (black with opacity 0.2)
       ctx.fillRect(0, 0, WIDTH, HEIGHT); // Fade effect, set opacity to 1 for sharper rendering of bars
-
+      
       let r, g, b;
-      let bars = 118 // Set total number of bars you want per frame
-
-      for (let i = 0; i < bars; i++) {
-        barHeight = (dataArray[i] * 2.5);
+      let bars = 20 // Set total number of bars you want per frame
+      
+      for (let i = 0; i < NUM_OF_BARS; i++) {
+        const percentageOf255 = dataArray[i] / 255;
+        const barHeight = percentageOf255 * HEIGHT;
+        // const barHeight = (dataArray[i] * 2.5);
 
         if (dataArray[i] > 210){ // pink
           r = 250
@@ -195,7 +200,7 @@ window.onload = function() {
         // (x, y) Represents start point
         // (i, j) Represents end point
 
-        x += barWidth + 10 // Gives 10px space between each bar
+        x += (WIDTH / NUM_OF_BARS)  // Gives 10px space between each bar
       }
     }
 
