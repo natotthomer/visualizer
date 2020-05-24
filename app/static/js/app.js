@@ -1,70 +1,3 @@
-// const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-// const audioCtx = new AudioContext();
-// document.querySelector('body').addEventListener('click', function() {
-//   audioCtx.resume().then(() => {
-//     console.log('Playback resumed successfully');
-//   });
-// })
-// const oscillatorNode = audioCtx.createOscillator();
-// const gainNode = audioCtx.createGain();
-// const analyserNode = audioCtx.createAnalyser();
-
-// oscillatorNode.connect(gainNode)
-// oscillatorNode.start()
-// oscillatorNode.type = 'sawtooth'
-// oscillatorNode.frequency.setValueAtTime(110, audioCtx.currentTime);
-// gainNode.gain.value = 0.5;
-// gainNode.connect(audioCtx.destination)
-// oscillatorNode.connect(analyserNode)
-
-// analyserNode.fftSize = 16384;
-// var bufferLength = analyserNode.frequencyBinCount;
-// var dataArray = new Uint8Array(bufferLength);
-// analyserNode.getByteTimeDomainData(dataArray);
-
-// // Get a canvas defined with ID "oscilloscope"
-// var canvas = document.getElementById("oscilloscope");
-// var canvasCtx = canvas.getContext("2d");
-
-// function draw() {
-
-//   requestAnimationFrame(draw);
-
-//   analyserNode.getByteFrequencyData(dataArray);
-
-//   canvasCtx.fillStyle = "rgb(200, 200, 200)";
-//   canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-//   canvasCtx.lineWidth = 2;
-//   canvasCtx.strokeStyle = "rgb(0, 0, 0)";
-
-//   canvasCtx.beginPath();
-
-//   var sliceWidth = canvas.width * 1.0 / bufferLength;
-//   var x = 0;
-
-//   for (var i = 0; i < bufferLength; i++) {
-
-//     var v = dataArray[i] / 128.0;
-//     var y = v * canvas.height / 4 + (canvas.height / 4);
-
-//     if (i === 0) {
-//       canvasCtx.moveTo(x, y);
-//     } else {
-//       canvasCtx.lineTo(x, y);
-//     }
-
-//     x += sliceWidth;
-//   }
-
-//   canvasCtx.lineTo(canvas.width, canvas.height / 2);
-//   canvasCtx.stroke();
-// }
-
-// draw();
-
-
 window.onload = function() {
 
   const file = document.getElementById("file-input");
@@ -87,7 +20,6 @@ window.onload = function() {
     const ctx = canvas.getContext("2d");
     ///////////////////////////////////////////
 
-
     const context = new AudioContext(); // (Interface) Audio-processing graph
     let src = context.createMediaElementSource(audio); // Give the audio context an audio source,
     // to which can then be played and manipulated
@@ -96,7 +28,6 @@ window.onload = function() {
     src.connect(analyser); // Connects the audio context source to the analyser
     analyser.connect(context.destination); // End destination of an audio graph in a given context
     // Sends sound to the speakers or headphones
-
 
     /////////////// ANALYSER FFTSIZE ////////////////////////
     // analyser.fftSize = 32;
@@ -108,8 +39,8 @@ window.onload = function() {
     // analyser.fftSize = 2048;
     // analyser.fftSize = 4096;
     // analyser.fftSize = 8192;
-    analyser.fftSize = 16384;
-    // analyser.fftSize = 32768;
+    // analyser.fftSize = 16384;
+    analyser.fftSize = 32768;
 
     // (FFT) is an algorithm that samples a signal over a period of time
     // and divides it into its frequency components (single sinusoidal oscillations).
@@ -120,9 +51,8 @@ window.onload = function() {
     // Lower the size, the less bars (but wider in size)
     ///////////////////////////////////////////////////////////
 
-
     const bufferLength = analyser.frequencyBinCount; // (read-only property)
-    // Unsigned integer, half of fftSize (so in this case, bufferLength = 8192)
+    // Unsigned integer, half of fftSize (so in this case, bufferLength = 16384)
     // Equates to number of data values you have to play with for the visualization
 
     // The FFT size defines the number of bins used for dividing the window into equal strips, or bins.
@@ -137,50 +67,46 @@ window.onload = function() {
     console.log('WIDTH: ', WIDTH, 'HEIGHT: ', HEIGHT)
     console.log('bufferLength', bufferLength)
 
-    const barWidth = (WIDTH / bufferLength) * 13;
-    console.log('BARWIDTH: ', barWidth)
+    const BAR_WIDTH = 4;
+    console.log('BAR_WIDTH: ', BAR_WIDTH)
 
-    const NUM_OF_BARS = 118;
-
-    const TOTAL_WIDTH = (NUM_OF_BARS*10)+(NUM_OF_BARS*barWidth)
-    console.log('TOTAL WIDTH: ', TOTAL_WIDTH / NUM_OF_BARS) // (total space between bars)+(total width of all bars)
-    
+    const NUM_OF_BARS = WIDTH / BAR_WIDTH;
+    const SPACE_BETWEEN_BARS = (WIDTH / NUM_OF_BARS) - BAR_WIDTH;
+    console.log("SPACE_BETWEEN_BARS", SPACE_BETWEEN_BARS)
 
     let x = 0;
-    
+
     function renderFrame() {
       requestAnimationFrame(renderFrame); // Takes callback function to invoke before rendering
-      
+
       x = 0; // reset x
-      
+
       analyser.getByteFrequencyData(dataArray); // Copies the frequency data into dataArray
       // Results in a normalized array of values between 0 and 255
       // Before this step, dataArray's values are all zeros (but with length of 8192)
-      
+
       ctx.fillStyle = "rgba(0,0,0,0.2)"; // Clears canvas before rendering bars (black with opacity 0.2)
       ctx.fillRect(0, 0, WIDTH, HEIGHT); // Fade effect, set opacity to 1 for sharper rendering of bars
-      
-      let r, g, b;
-      let bars = 20 // Set total number of bars you want per frame
-      
-      for (let i = 0; i < NUM_OF_BARS; i++) {
-        const percentageOf255 = dataArray[i] / 255;
-        const barHeight = percentageOf255 * HEIGHT;
-        // const barHeight = (dataArray[i] * 2.5);
 
-        if (dataArray[i] > 210){ // pink
+      let r, g, b;
+
+      for (let i = 0; i < WIDTH; i++) {
+        const percentageOfHeight = dataArray[i] / 255;
+        const barHeight = percentageOfHeight * HEIGHT;
+
+        if (dataArray[i] > 210) { // pink
           r = 250
           g = 0
           b = 255
-        } else if (dataArray[i] > 200){ // yellow
+        } else if (dataArray[i] > 200) { // yellow
           r = 250
           g = 255
           b = 0
-        } else if (dataArray[i] > 190){ // yellow/green
+        } else if (dataArray[i] > 190) { // yellow/green
           r = 204
           g = 255
           b = 0
-        } else if (dataArray[i] > 180){ // blue/green
+        } else if (dataArray[i] > 180) { // blue/green
           r = 0
           g = 219
           b = 131
@@ -190,17 +116,10 @@ window.onload = function() {
           b = 255
         }
 
-        // if (i === 0){
-        //   console.log(dataArray[i])
-        // }
-
         ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(x, (HEIGHT - barHeight), barWidth, barHeight);
-        // (x, y, i, j)
-        // (x, y) Represents start point
-        // (i, j) Represents end point
+        ctx.fillRect(x, (HEIGHT - barHeight), BAR_WIDTH, 1);
 
-        x += (WIDTH / NUM_OF_BARS)  // Gives 10px space between each bar
+        x += BAR_WIDTH + SPACE_BETWEEN_BARS;
       }
     }
 
