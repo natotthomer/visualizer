@@ -1,45 +1,28 @@
 window.onload = function() {
 
-  const file = document.getElementById("file-input");
   const canvas = document.getElementById("canvas");
-  const h3 = document.getElementById('name')
   const audio = document.getElementById("audio");
+  const context = new AudioContext(); // (Interface) Audio-processing graph
 
-  file.onchange = function() {
-
-    const files = this.files; // FileList containing File objects selected by the user (DOM File API)
-    console.log('FILES[0]: ', files[0])
-    audio.src = URL.createObjectURL(files[0]); // Creates a DOMString containing the specified File object
-
-    const name = files[0].name
-    h3.innerText = `${name}` // Sets <h3> to the name of the file
+  audio.playing = function() {
 
     ///////// <CANVAS> INITIALIZATION //////////
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = 200;
+    canvas.height = 200;
     const ctx = canvas.getContext("2d");
     ///////////////////////////////////////////
 
-    const context = new AudioContext(); // (Interface) Audio-processing graph
     let src = context.createMediaElementSource(audio); // Give the audio context an audio source,
     // to which can then be played and manipulated
     const analyser = context.createAnalyser(); // Create an analyser for the audio context
-
-    src.connect(analyser); // Connects the audio context source to the analyser
-    analyser.connect(context.destination); // End destination of an audio graph in a given context
+    const gainNodeToAnalyze = context.createGain();
+    // volumeNode.gain.setValueAtTime(0, context.currentTime);
+    src.connect(gainNodeToAnalyze); // Connects the audio context source to the analyser
+    gainNodeToAnalyze.connect(analyser);
+    // volumeNode.connect(context.destination); // End destination of an audio graph in a given context
     // Sends sound to the speakers or headphones
 
     /////////////// ANALYSER FFTSIZE ////////////////////////
-    // analyser.fftSize = 32;
-    // analyser.fftSize = 64;
-    // analyser.fftSize = 128;
-    // analyser.fftSize = 256;
-    // analyser.fftSize = 512;
-    // analyser.fftSize = 1024;
-    // analyser.fftSize = 2048;
-    // analyser.fftSize = 4096;
-    // analyser.fftSize = 8192;
-    // analyser.fftSize = 16384;
     analyser.fftSize = 32768;
 
     // (FFT) is an algorithm that samples a signal over a period of time
@@ -47,9 +30,6 @@ window.onload = function() {
     // It separates the mixed signals and shows what frequency is a violent vibration.
 
     // (FFTSize) represents the window size in samples that is used when performing a FFT
-
-    // Lower the size, the less bars (but wider in size)
-    ///////////////////////////////////////////////////////////
 
     const bufferLength = analyser.frequencyBinCount; // (read-only property)
     // Unsigned integer, half of fftSize (so in this case, bufferLength = 16384)
@@ -67,7 +47,7 @@ window.onload = function() {
     console.log('WIDTH: ', WIDTH, 'HEIGHT: ', HEIGHT)
     console.log('bufferLength', bufferLength)
 
-    const BAR_WIDTH = 4;
+    const BAR_WIDTH = 2;
     console.log('BAR_WIDTH: ', BAR_WIDTH)
 
     const NUM_OF_BARS = WIDTH / BAR_WIDTH;
@@ -76,6 +56,7 @@ window.onload = function() {
 
     let x = 0;
 
+    let previousCoords = [0,0];
     function renderFrame() {
       requestAnimationFrame(renderFrame); // Takes callback function to invoke before rendering
 
@@ -87,12 +68,15 @@ window.onload = function() {
 
       ctx.fillStyle = "rgba(0,0,0,0.2)"; // Clears canvas before rendering bars (black with opacity 0.2)
       ctx.fillRect(0, 0, WIDTH, HEIGHT); // Fade effect, set opacity to 1 for sharper rendering of bars
+      ctx.lineWidth = 6;
+      // ctx.strokeStyle = "#333";
 
       let r, g, b;
 
-      for (let i = 0; i < WIDTH; i++) {
+      // const values = [];
+      for (let i = 0; i < dataArray.length; i++) {
         const percentageOfHeight = dataArray[i] / 255;
-        const barHeight = percentageOfHeight * HEIGHT;
+        const BAR_HEIGHT = percentageOfHeight * HEIGHT;
 
         if (dataArray[i] > 210) { // pink
           r = 250
@@ -116,9 +100,17 @@ window.onload = function() {
           b = 255
         }
 
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(x, (HEIGHT - barHeight), BAR_WIDTH, 1);
-
+        ctx.beginPath();
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        const y = HEIGHT - BAR_HEIGHT;
+        ctx.moveTo(x, y);
+        if (i !== 0) {
+          ctx.quadraticCurveTo(previousCoords[0], previousCoords[1], x, y)
+        }
+        ctx.stroke()
+        previousCoords = [x, y]
+        // ctx.fillRect(x, (HEIGHT - BAR_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
+        
         x += BAR_WIDTH + SPACE_BETWEEN_BARS;
       }
     }
